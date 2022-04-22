@@ -1,0 +1,349 @@
+﻿@page
+@model IndexModel 
+@{
+    ViewData["Title"] = "Home page";
+}
+
+    <script>
+        var cols = [];
+        var dialog;
+        var contentStr = "";
+    </script>
+    <style>
+        #dialog li {margin-bottom:7px}
+        #dialog i {margin-left:5px;margin-right:10px;color:grey}
+        #dialog li span {color:black}
+    </style>
+    
+
+    
+    
+    <script src="https://kendo.cdn.telerik.com/2018.3.1017/js/jszip.min.js"></script>
+
+<div id="example">
+
+    <div id="grid"></div>
+    <div id="dialog">
+    </div>
+    <script>
+        $(document).ready(function () {
+
+            dialog = $('#dialog');
+
+            contentStr = "<input id='Field' type='text' style='border:1px solid #dbdbdb;padding:6px;width:98%;margin-bottom:5px;border-radius:7px;' placeholder='Field name' value=''/><p></p>";
+            contentStr += "<ul>";
+                contentStr += "<li><input type='radio' name='datatype' value='String'><i class='fa-solid fa-font'></i><span>Single line text</span></li>";
+                contentStr += "<li><input type='radio' name='datatype' value='String'><i class='fa-solid fa-paragraph'></i><span>Long text</span></li>";
+                contentStr += "<li><input type='radio' name='datatype' value='Number'><i class='fa-solid fa-1'></i><span>Integer</span></li>";
+                // contentStr += "<li><input type='radio' name='datatype' value='1'><i class='fa-solid fa-paperclip'></i><span>Attachment</span></li>";
+                contentStr += "<li><input type='radio' name='datatype' value='Boolean'><i class='fa-solid fa-square-check'></i><span>Boolean</span></li>";
+                // contentStr += "<li><input type='radio' name='datatype' value='1'><i class='fa-solid fa-square-check'></i><span>Mulitple select</span></li>";
+                // contentStr += "<li><input type='radio' name='datatype' value='1'><i class='fa-solid fa-people-carry-box'></i><span>Collaborator</span></li>";
+                contentStr += "<li><input type='radio' name='datatype' value='Date'><i class='fa-solid fa-calendar-days'></i><span>Date</span></li>";
+                contentStr += "<li><input type='radio' name='datatype' value='Timestamp'><i class='fa-solid fa-clock'></i><span>Time</span></li>";
+                contentStr += "<li><input type='radio' name='datatype' value='String'><i class='fa-solid fa-envelope'></i><span>Email</span></li>";
+                contentStr += "<li><input type='radio' name='datatype' value='Integer'><i class='fa-solid fa-phone'></i><span>Phone</span></li>";
+                // contentStr += "<li><input type='radio' name='datatype' value='Double'><i class='fa-solid fa-money'></i><span>Currency</span></li>";
+                contentStr += "<li><input type='radio' name='datatype' value='Double'><i class='fa-solid fa-percent'></i><span>Percent</span></li>";
+                contentStr += "<li><input type='radio' name='datatype' value='Integer'><i class='fa-solid fa-list'></i><span>Lookup</span></li>";
+                // contentStr += "<li><input type='radio' name='datatype' value='Timestamp'><i class='fa-solid fa-clock'></i><span>Last modified time</span></li>";
+            contentStr += "</ul>";
+
+            function onClose(e) {
+                console.log("action :: CLOSE", e);
+            }
+
+            function onOK(e) {
+                console.log("action :: OK", e, $('#Field').text());
+                saveData();
+            }
+
+            $('.context-menu-one, .k-menu-link').on('click', function(e){
+
+                dialog.kendoDialog({
+                width: "450px",
+                //title: "Software Update",
+                closable: false,
+                modal: false,
+                content: contentStr,
+                actions: [
+                    { text: 'Cancel' },
+                    { text: 'Add field', primary: true, action: onOK }
+                ],
+                close: onClose
+            });
+        })    
+
+
+            $("#configurator").kendoTabStrip();
+            loadColumns();
+            $.get( "/CustomMenu", function(response) {
+                customMenuStr = response;
+            });
+            $(".clearSelection").click(function () {
+                $("#grid").data("kendoGrid").clearSelection();
+            });
+
+            var selectRow = function (e) {
+                if (e.type != "keypress" || kendo.keys.ENTER == e.keyCode) {
+                    var grid = $("#grid").data("kendoGrid"),
+                        rowIndex = $("#selectRow").val(),
+                        row = grid.tbody.find(">tr:not(.k-grouping-row)").eq(rowIndex);
+
+                    grid.select(row);
+                }
+            },
+                toggleGroup = function (e) {
+                    if (e.type != "keypress" || kendo.keys.ENTER == e.keyCode) {
+                        var grid = $("#grid").data("kendoGrid"),
+                            rowIndex = $("#groupRow").val(),
+                            row = grid.tbody.find(">tr.k-grouping-row").eq(rowIndex);
+
+                        if (row.has(".k-i-collapse").length) {
+                            grid.collapseGroup(row);
+                        } else {
+                            grid.expandGroup(row);
+                        }
+                    }
+                },
+                changeColWidth = function (e) {
+                    if (e.type != "keypress" || kendo.keys.ENTER == e.keyCode) {
+                        var grid = $("#grid").data("kendoGrid"),
+                            colIndex = $("#colIndex").val(),
+                            width = $("#colWidth").val(),
+                            column = grid.columns[colIndex];
+                        if (parseInt(colIndex) >= 0 && parseInt(width) >= 0) {
+                            grid.resizeColumn(column, width);
+                        }
+                    }
+                },
+                exportFile = function (e) {
+                    if (e.type != "keypress" || kendo.keys.ENTER == e.keyCode) {
+                        var grid = $("#grid").data("kendoGrid");
+                        grid.saveAsExcel();
+                    }
+                },
+                checkBoxChange = function (e) {
+                    var grid = $("#grid").data("kendoGrid");
+                    var columnIndex = parseInt(this.id);
+
+                    if (this.checked) {
+                        grid.showColumn(columnIndex);
+                    } else {
+                        grid.hideColumn(columnIndex);
+                    }
+                };
+
+
+            $(".selectRow").click(selectRow);
+            $("#selectRow").keypress(selectRow);
+
+            $(".toggleGroup").click(toggleGroup);
+            $("#groupRow").keypress(toggleGroup);
+
+            $(".changeColWidth").click(changeColWidth);
+            $("#colWidth").keypress(changeColWidth);
+            $("#colIndex").keypress(changeColWidth);
+
+            $(".exportBtn").click(exportFile);
+            $("#fileName").keypress(exportFile);
+
+            $(".kd-checkbox").click(checkBoxChange);
+        });
+
+
+
+
+        function loadGrid(){
+            $("#grid").empty();
+            console.log(cols);
+            $("#grid").kendoGrid({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: "/api/data",
+                            dataType: "jsonp"
+                        }
+                    },
+                    pageSize: 10,
+
+                },
+                selectable: "multiple row",
+                pageable: {
+                    buttonCount: 5
+                },
+                columnMenu: {
+                    filterable: false
+                },
+
+                sortable: false,
+                filterable: false,
+                groupable: false,
+                dataBound: onDataBound,
+                columns: cols,
+                excelExport: function (e) {
+                    e.workbook.fileName = $("#fileName").val();
+                }
+            });
+           
+        }
+
+        function saveData() {
+            var data =
+            {
+                "Key": $('#Field').val(),
+                "Value": $('input[name=datatype]:checked').val()
+            };
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/schema");
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(data));
+            xhr.onload = function() {
+                console.log(xhr.response);      // Configurable (text by default)
+                setTimeout(loadColumns(), 1000);
+            }
+        }
+
+        
+        function deleteData() {
+            var data =
+            {
+                "field": "PartNo",
+                "allrecords": false
+            };
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open("DELETE", "/api/schema");
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(data));
+            xhr.onload = function() {
+                console.log(xhr.response);      // Configurable (text by default)
+                setTimeout(loadColumns(), 1000);
+            }
+        }
+
+    function loadColumns(){
+        var xhr = new XMLHttpRequest();
+        var callback='jquery1234';
+        xhr.open("GET", "/api/schema?callback="+callback);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send();
+        xhr.onload = function() {
+            cols = [];
+            var p1 = xhr.response.replace(callback, '').replace('(', '').replace(')', '');      // Configurable (text by default)
+            var jsonObj = JSON.parse(p1);
+            jsonObj.forEach(e => {
+                for (const [key, value] of Object.entries(e)) {
+                    cols.push({ field: `${key}`, title: `${key}` });
+                }
+            });
+            loadGrid();
+            
+        }
+    }
+    
+    function onDataBound(){
+        $.each($('.k-header-column-menu'), function(e){$($('.k-header-column-menu')[e]).trigger("click")});
+        AddCustomMenuToToolbar();
+    }
+
+    function AddCustomMenuToToolbar(){
+        $('.k-sort-asc, .k-sort-desc').hide();
+        $('.k-menu-vertical').append(customMenuStr);
+        $('.context-menu-one, .k-menu-link').on('click', function(e){
+            var fieldText = e.currentTarget.children[1].innerHTML;
+            // colId = -1;
+            // $("#grid").data("kendoGrid").columns.forEach(function(c){
+                
+            //     if (c.title === title){
+            //         colId = 0;
+
+            //     }
+            // })
+            console.log(e);
+            switch(fieldText) {
+                case 'Add field': addField(e); break;
+                case 'Set field type': setFieldType(e); break;
+                case 'Rename field': break;
+                case 'Edit field description': break;
+                case 'Delete field': deleteField(e); break;
+                case 'Duplicate field': break;
+                case 'Edit field permissions': break;
+              default:
+          }
+        });
+            
+    }
+
+
+    function onClose(e) {
+        $('.k-dialog').hide();
+        console.log("action :: CLOSE", e);
+    }
+
+    function addField(e){
+
+        function onOK(e) {
+            console.log("action :: OK", e, $('#Field').text());
+            $('.k-dialog').hide();
+            saveData();
+        }
+        $('.k-dialog').show();
+        dialog.kendoDialog({
+            width: "450px",
+            closable: false,
+            modal: false,
+            content: contentStr,//e.currentTarget.children[1].innerHTML,
+            actions: [
+                { text: 'Cancel' },
+                { text: 'Add field', primary: true, action: onOK }
+            ],
+            close: onClose
+        });
+    }
+
+        function deleteField(e){
+
+            function onOK(e) {
+                console.log("action :: OK", e, $('#Field').text());
+                $('.k-dialog').hide();
+                deleteData();
+            }
+            $('.k-dialog').show();
+            dialog.kendoDialog({
+                width: "450px",
+                closable: false,
+                modal: false,
+                content: e.currentTarget.children[1].innerHTML,
+                actions: [
+                    { text: 'Cancel' },
+                    { text: 'Delete field', primary: true, action: onOK }
+                ],
+                close: onClose
+            });
+        }
+
+
+    function setFieldType(e){
+
+        function onOK(e) {
+            console.log("action :: OK", e, $('#Field').text());
+            $('.k-dialog').hide();
+            saveData();
+        }
+        $('.k-dialog').show();
+        dialog.kendoDialog({
+            width: "450px",
+            //title: "Software Update",
+            closable: false,
+            modal: false,
+            content: e.currentTarget.children[1].innerHTML,
+            actions: [
+                { text: 'Cancel' },
+                { text: 'Add field', primary: true, action: onOK }
+            ],
+            close: onClose
+        });
+    }
+    </script>
+</div>
