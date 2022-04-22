@@ -4,7 +4,7 @@
 <p>This solution demonstrates the use of the grid compononent to build a schema in MongoDB.</p>
 
 <h4>Initial setup requirements</h4>
-<p>Telerik Kendo UI grid component</
+<p>Telerik Kendo UI grid component</p>
 MongoDB
 https://www.mongodb.com/docs/manual/installation/
 
@@ -16,7 +16,7 @@ https://www.mongodb.com/docs/manual/installation/
 <p>The crud actions add and delete have been implemented, though see point 2&3 below to be refined.</p>
 
 <h4>Work in progress</h4>
-<p>There are 2 areas of further progress required.</p>
+<p>These are areas of further progress required.</p>
 1. Rename field, edit field type, edit discription need completing.
 
 2. Onclick delete/rename/event, identifying the column name to pass clicked needs further investigation
